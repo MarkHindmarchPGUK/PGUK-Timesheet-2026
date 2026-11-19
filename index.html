@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#113a5c">
+<title>PGUK Timesheet</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-row">
+    <h1>PGUK Timesheet</h1>
+    <button id="settingsBtn" class="icon-btn" title="Settings" aria-label="Settings">⚙</button>
+  </div>
+  <div class="employee-line">
+    <span id="employeeDisplay">Set your name</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- Payroll period selector -->
+  <section class="card period-card">
+    <div class="period-nav">
+      <button id="prevPeriodBtn" class="icon-btn" aria-label="Previous payroll period">‹</button>
+      <div class="period-label-wrap">
+        <div class="period-label" id="periodLabel">19 Jun – 18 Jul 2026</div>
+        <div class="period-sublabel" id="periodSublabel"></div>
+      </div>
+      <button id="nextPeriodBtn" class="icon-btn" aria-label="Next payroll period">›</button>
+    </div>
+  </section>
+
+  <!-- Summary -->
+  <section class="card summary-card">
+    <div class="summary-total">
+      <div class="total-value" id="totalDays">0</div>
+      <div class="total-label">Total days worked</div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat">
+        <div class="stat-value" id="statPremium">0</div>
+        <div class="stat-label">Night shift premiums</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="statOvertime">0h</div>
+        <div class="stat-label">Total overtime</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="statLeave">0</div>
+        <div class="stat-label">Annual leave days</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="statStood">0</div>
+        <div class="stat-label">Stood down days</div>
+      </div>
+    </div>
+    <div class="empty-note" id="emptyNote">No days logged for this payroll period yet.</div>
+  </section>
+
+  <!-- Add entry form -->
+  <section class="card form-card">
+    <h2 id="formTitle">Add a day worked</h2>
+    <form id="entryForm">
+      <input type="hidden" id="entryId">
+
+      <label>Date
+        <input type="date" id="entryDate" required>
+      </label>
+
+      <label class="shift-label">Tick if applicable</label>
+      <div class="shift-toggle">
+        <label class="shift-option" data-type="premium">
+          <input type="checkbox" name="dayFlag" value="premium">
+          <span class="shift-box">🌙 Night shift premium</span>
+        </label>
+        <label class="shift-option" data-type="leave">
+          <input type="checkbox" name="dayFlag" value="leave">
+          <span class="shift-box">🏖️ Annual leave</span>
+        </label>
+        <label class="shift-option" data-type="stooddown">
+          <input type="checkbox" name="dayFlag" value="stooddown">
+          <span class="shift-box">⏸️ Stood down</span>
+        </label>
+      </div>
+      <div class="field-hint">Leave all unticked for a standard day shift.</div>
+
+      <div class="note-line" id="noteLine" hidden>
+        Delivered to: <strong id="noteText"></strong>
+        <button type="button" id="editNoteBtn" class="link-btn">Change</button>
+      </div>
+
+      <div id="timesWrap">
+        <div class="time-row">
+          <div class="time-field">
+            <span class="time-label">Start time</span>
+            <div class="time-select">
+              <select id="startHH" aria-label="Start time hour"></select>
+              <span class="colon">:</span>
+              <select id="startMM" aria-label="Start time minutes"></select>
+            </div>
+          </div>
+          <div class="time-field">
+            <span class="time-label">Finish time</span>
+            <div class="time-select">
+              <select id="endHH" aria-label="Finish time hour"></select>
+              <span class="colon">:</span>
+              <select id="endMM" aria-label="Finish time minutes"></select>
+            </div>
+          </div>
+        </div>
+        <div class="field-hint">24-hour clock. Enter exact times as shown on your tacho record. If you finish after midnight, just enter the time you finished.</div>
+        <div class="hours-preview" id="hoursPreview"></div>
+      </div>
+      <div class="auto-note" id="autoNote" hidden>Annual leave and stood down days are automatically logged as a standard 12 hour day.</div>
+
+      <div class="form-error" id="formError"></div>
+
+      <div class="form-actions">
+        <button type="button" id="cancelEditBtn" class="btn-secondary" hidden>Cancel</button>
+        <button type="submit" id="saveEntryBtn" class="btn-primary">Save entry</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Entries list -->
+  <section class="card list-card">
+    <h2>Days logged this period</h2>
+    <ul id="entryList" class="entry-list"></ul>
+  </section>
+
+  <div class="export-bar">
+    <button id="exportPdfBtn" class="btn-primary btn-large">Export period to PDF</button>
+  </div>
+
+</main>
+
+<!-- Settings modal -->
+<div id="settingsModal" class="modal" hidden>
+  <div class="modal-content">
+    <h2>Settings</h2>
+    <label>Your name
+      <input type="text" id="employeeNameInput" placeholder="e.g. Jane Smith">
+    </label>
+    <div class="modal-actions">
+      <button id="saveNameBtn" class="btn-primary">Save</button>
+      <button id="closeSettingsBtn" class="btn-secondary">Close</button>
+    </div>
+    <hr>
+    <button id="clearDataBtn" class="btn-danger">Clear all timesheet data on this device</button>
+  </div>
+</div>
+
+<!-- Night shift premium: delivery note -->
+<div id="noteModal" class="modal" hidden>
+  <div class="modal-content">
+    <h2>Night shift premium</h2>
+    <label>Who did you deliver to?
+      <input type="text" id="noteInput" placeholder="Customer / site name" maxlength="120" autocomplete="off">
+    </label>
+    <div class="form-error" id="noteError"></div>
+    <div class="modal-actions">
+      <button type="button" id="cancelNoteBtn" class="btn-secondary">Cancel</button>
+      <button type="button" id="saveNoteBtn" class="btn-primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="js/jspdf.umd.min.js"></script>
+<script src="js/jspdf.plugin.autotable.min.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
